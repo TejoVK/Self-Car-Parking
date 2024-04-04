@@ -4,15 +4,18 @@ import math
 from car import Car
 from parked_car import ParkedCar
 
+
 class Environment:
     def __init__(self):
         pygame.init()
 
         self.screen_width = 400
-        self.screen_height = 600   
+        self.screen_height = 600
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.bg_color = (230, 230, 230)
-        self.car = Car(self.screen, self.screen_width/2 + 40, self.screen_height - 250)
+        self.car = Car(
+            self.screen, self.screen_width / 2 + 40, self.screen_height - 250
+        )
 
         # Draw parked cars
         self.parked_car1 = ParkedCar(self.screen, 315, 120, 0)
@@ -33,7 +36,7 @@ class Environment:
 
     def draw(self, car):
         self.screen.fill(self.bg_color)
-        
+
         lane_width = 80
         lane_height = self.screen_height
         space_width = 70
@@ -45,28 +48,47 @@ class Environment:
         border_color = (255, 255, 0)
         target_color = (60, 207, 43)
 
-        left_empty_space = pygame.Rect(0, 0, (self.screen_width / 2) - lane_width, self.screen_height)
+        left_empty_space = pygame.Rect(
+            0, 0, (self.screen_width / 2) - lane_width, self.screen_height
+        )
         pygame.draw.rect(self.screen, (48, 48, 48), left_empty_space)
-        right_empty_space = pygame.Rect((self.screen_width / 2) + lane_width, 0, (self.screen_width / 2) - lane_width, self.screen_height)
+        right_empty_space = pygame.Rect(
+            (self.screen_width / 2) + lane_width,
+            0,
+            (self.screen_width / 2) - lane_width,
+            self.screen_height,
+        )
         pygame.draw.rect(self.screen, (48, 48, 48), right_empty_space)
-        
-        pygame.draw.rect(self.screen, lane_color, ((self.screen_width/2) - (lane_width), 0, lane_width, lane_height))
-        pygame.draw.rect(self.screen, lane_color, ((self.screen_width/2), 0, lane_width, lane_height))
+
+        pygame.draw.rect(
+            self.screen,
+            lane_color,
+            ((self.screen_width / 2) - (lane_width), 0, lane_width, lane_height),
+        )
+        pygame.draw.rect(
+            self.screen,
+            lane_color,
+            ((self.screen_width / 2), 0, lane_width, lane_height),
+        )
 
         line_height = 20
         line_spacing = 10
         num_lines = int(lane_height / (line_height + line_spacing))
         line_y = (self.screen_height - num_lines * (line_height + line_spacing)) / 2
         for i in range(num_lines):
-            line_rect = pygame.Rect((self.screen_width / 2) - 1.5, line_y, 3, line_height)
+            line_rect = pygame.Rect(
+                (self.screen_width / 2) - 1.5, line_y, 3, line_height
+            )
             pygame.draw.rect(self.screen, line_color, line_rect)
             line_y += line_height + line_spacing
 
-        num_spaces = 4 
-        space_x = (self.screen_width / 2) + lane_width 
-        space_y = (self.screen_height - num_spaces * (space_height)) / 2 
+        num_spaces = 4
+        space_x = (self.screen_width / 2) + lane_width
+        space_y = (self.screen_height - num_spaces * (space_height)) / 2
         for i in range(num_spaces):
-            parking_space_rect = pygame.Rect(space_x, space_y, space_width, space_height)
+            parking_space_rect = pygame.Rect(
+                space_x, space_y, space_width, space_height
+            )
             pygame.draw.rect(self.screen, space_color, parking_space_rect)
             if i == 1:
                 target_space_rect = parking_space_rect
@@ -76,16 +98,18 @@ class Environment:
 
         pygame.draw.rect(self.screen, target_color, target_space_rect, 2)
 
-        space_x = (self.screen_width / 2) - lane_width - space_width 
-        space_y = (self.screen_height - num_spaces * (space_height)) / 2  
+        space_x = (self.screen_width / 2) - lane_width - space_width
+        space_y = (self.screen_height - num_spaces * (space_height)) / 2
         for i in range(num_spaces):
-            parking_space_rect = pygame.Rect(space_x, space_y, space_width, space_height)
+            parking_space_rect = pygame.Rect(
+                space_x, space_y, space_width, space_height
+            )
             pygame.draw.rect(self.screen, space_color, parking_space_rect)
             pygame.draw.rect(self.screen, border_color, parking_space_rect, 2)
             space_y += space_height - 2
 
         for i in range(1, 8):
-            parked_car = getattr(self, 'parked_car' + str(i))
+            parked_car = getattr(self, "parked_car" + str(i))
             parked_car.draw()
         car.draw()
 
@@ -95,17 +119,35 @@ class Environment:
 
     def draw_line_to_target(self):
         car_midpoint_x, car_midpoint_y = self.car.x, self.car.y
-        pygame.draw.line(self.screen, (0, 0, 255), (car_midpoint_x, car_midpoint_y), (315, 240), 5)
+        pygame.draw.line(
+            self.screen, (0, 0, 255), (car_midpoint_x, car_midpoint_y), (315, 240), 5
+        )
 
     def bezier_point(self, t, P0, P1, P2, P3, P4):
         if t < 0.5:
             t_scaled = t * 2
-            x = (1 - t_scaled) ** 2 * P0[0] + 2 * (1 - t_scaled) * t_scaled * P1[0] + t_scaled ** 2 * P2[0]
-            y = (1 - t_scaled) ** 2 * P0[1] + 2 * (1 - t_scaled) * t_scaled * P1[1] + t_scaled ** 2 * P2[1]
+            x = (
+                (1 - t_scaled) ** 2 * P0[0]
+                + 2 * (1 - t_scaled) * t_scaled * P1[0]
+                + t_scaled**2 * P2[0]
+            )
+            y = (
+                (1 - t_scaled) ** 2 * P0[1]
+                + 2 * (1 - t_scaled) * t_scaled * P1[1]
+                + t_scaled**2 * P2[1]
+            )
         else:
             t_scaled = (t - 0.5) * 2
-            x = (1 - t_scaled) ** 2 * P2[0] + 2 * (1 - t_scaled) * t_scaled * P3[0] + t_scaled ** 2 * P4[0]
-            y = (1 - t_scaled) ** 2 * P2[1] + 2 * (1 - t_scaled) * t_scaled * P3[1] + t_scaled ** 2 * P4[1]
+            x = (
+                (1 - t_scaled) ** 2 * P2[0]
+                + 2 * (1 - t_scaled) * t_scaled * P3[0]
+                + t_scaled**2 * P4[0]
+            )
+            y = (
+                (1 - t_scaled) ** 2 * P2[1]
+                + 2 * (1 - t_scaled) * t_scaled * P3[1]
+                + t_scaled**2 * P4[1]
+            )
         return (x, y)
 
     def draw_parking_box(self):
@@ -114,7 +156,12 @@ class Environment:
         parking_box_surface = pygame.Surface((width, height), pygame.SRCALPHA)
         parking_box_color = (255, 255, 255, 128)
         border_thickness = 2
-        pygame.draw.rect(parking_box_surface, parking_box_color, (0, 0, width, height), border_thickness)
+        pygame.draw.rect(
+            parking_box_surface,
+            parking_box_color,
+            (0, 0, width, height),
+            border_thickness,
+        )
 
         self.screen.blit(parking_box_surface, (x, y))
 
@@ -122,7 +169,7 @@ class Environment:
         return np.linalg.norm(car_position - parking_spot_position)
 
     def reset(self):
-        self.car.x = self.screen_width/2 + 40
+        self.car.x = self.screen_width / 2 + 40
         self.car.y = self.screen_height - 250
         self.car.angle = 0
 
@@ -131,7 +178,7 @@ class Environment:
 
     def distance_to_bezier(self, x, y):
         num_points = 100
-        min_distance = float('inf')
+        min_distance = float("inf")
 
         for i in range(num_points):
             t = i / (num_points - 1)
@@ -139,9 +186,9 @@ class Environment:
             distance = math.sqrt((x - point[0]) ** 2 + (y - point[1]) ** 2)
             if distance < min_distance:
                 min_distance = distance
-        return min_distance   
-     
-    def step(self, action):
+        return min_distance
+
+    def step(self, action):  # main changes goes here
         acceleration = 0
         angle = self.car.angle
         if action == 0:
@@ -162,23 +209,45 @@ class Environment:
         state = np.array([self.car.x, self.car.y, self.car.angle])
 
         target_x, target_y = 315, 240
-    
-        prev_distance = math.sqrt((self.car.prev_x - target_x)**2 + (self.car.prev_y - target_y)**2)
-        distance = math.sqrt((self.car.x - target_x)**2 + (self.car.y - target_y)**2)
+
+        prev_distance = math.sqrt(
+            (self.car.prev_x - target_x) ** 2 + (self.car.prev_y - target_y) ** 2
+        )
+        distance = math.sqrt(
+            (self.car.x - target_x) ** 2 + (self.car.y - target_y) ** 2
+        )
         bezier_distance = self.distance_to_bezier(self.car.x, self.car.y)
 
-        car_rect = pygame.Rect(self.car.x - self.car.width / 2, self.car.y - self.car.height / 2, self.car.width, self.car.height)
+        car_rect = pygame.Rect(
+            self.car.x - self.car.width / 2,
+            self.car.y - self.car.height / 2,
+            self.car.width,
+            self.car.height,
+        )
 
         car_collision = False
         for i in range(1, 8):
-            parked_car = getattr(self, 'parked_car' + str(i))
+            parked_car = getattr(self, "parked_car" + str(i))
             if car_rect.colliderect(parked_car.rect):
                 car_collision = True
             break
 
         in_lane = 215 <= self.car.x
-        in_right_parking_space = (self.car.x >= 300) and (self.car.x <= 335) and (self.car.y >= 225) and (self.car.y <= 255) and (-10 <= abs(self.car.angle % 360) <= 10)
-        in_wrong_parking_space_right = ((self.car.x >= 265) and (self.car.x <= 340) and (((self.car.y >= 40) and (self.car.y <= 200)) or ((self.car.y >= 285) and (self.car.y <= 560))))
+        in_right_parking_space = (
+            (self.car.x >= 300)
+            and (self.car.x <= 335)
+            and (self.car.y >= 225)
+            and (self.car.y <= 255)
+            and (-10 <= abs(self.car.angle % 360) <= 10)
+        )
+        in_wrong_parking_space_right = (
+            (self.car.x >= 265)
+            and (self.car.x <= 340)
+            and (
+                ((self.car.y >= 40) and (self.car.y <= 200))
+                or ((self.car.y >= 285) and (self.car.y <= 560))
+            )
+        )
 
         target_dir = math.atan2(target_y - self.car.y, target_x - self.car.x)
         direction_diff = abs(target_dir - self.car.angle)
@@ -225,10 +294,9 @@ class Environment:
 
         return state, reward, done
 
-    
-    def render(self, mode='human'):
+    def render(self, mode="human"):
         self.draw(self.car)
-    
+
     def run(self):
         clock = pygame.time.Clock()
         fps = 30
@@ -239,9 +307,10 @@ class Environment:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-    
+                    # save the model here
+
             state = np.array([self.car.x, self.car.y, self.car.angle])
-            action = np.random.choice(4)
+            action = np.random.choice(4)  # need to be changed here
             next_state, reward, dones = self.step(action)
 
             self.draw(self.car)
@@ -253,10 +322,11 @@ class Environment:
 
             clock.tick(fps)
         pygame.quit()
-    
-    def quit(self):
-        pygame.quit()
-        env.run()
+
+    # def quit(self):
+    #     pygame.quit()
+    #     env.run()
+
 
 if __name__ == "__main__":
     env = Environment()
