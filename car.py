@@ -16,8 +16,8 @@ class Car:
         )
         self.x = x + self.width / 2
         self.y = y + self.height / 2
-        self.speed = 0
-        self.acceleration = 0
+        self.speed = 1
+        self.acceleration = 1
         self.max_speed = 5
         self.min_speed = -2
         self.angle = 0 % 360

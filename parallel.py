@@ -1,9 +1,10 @@
 import pygame
 import numpy as np
 import math
+import torch
 from car import Car
 from parked_car import ParkedCar
-
+from agent import Agent  # Import the Agent class
 
 class Environment:
     def __init__(self):
@@ -173,7 +174,7 @@ class Environment:
         self.car.y = self.screen_height - 250
         self.car.angle = 0
 
-        state = np.array([self.car.x, self.car.y, self.car.angle])
+        state = np.array([self.car.x, self.car.y, self.car.acceleration, self.car.angle])
         return state
 
     def distance_to_bezier(self, x, y):
@@ -188,9 +189,13 @@ class Environment:
                 min_distance = distance
         return min_distance
 
-    def step(self, action):  # main changes goes here
+    def step(self, action):
         acceleration = 0
         angle = self.car.angle
+
+        if isinstance(action, torch.Tensor):  # Check if action is a tensor
+            action = int(action.item())  # Convert tensor to integer
+
         if action == 0:
             acceleration += 2  # Accelerate forward
         elif action == 1:
@@ -200,16 +205,14 @@ class Environment:
         elif action == 3:
             angle -= 5  # Turn left
         elif action == 4:
-            acceleration -= 2  # Accelerate in reverse
-
+            acceleration -= 2  # Acce
+            
         self.car.acceleration = acceleration
         self.car.angle = angle
         self.car.update()
         boundary_hit = self.car.handle_boundary()
-        state = np.array([self.car.x, self.car.y, self.car.angle])
-
+        state = np.array([self.car.x, self.car.y, self.car.acceleration, self.car.angle]) #car.x, car.y, car.speed, car.acceleration, car.angle
         target_x, target_y = 315, 240
-
         prev_distance = math.sqrt(
             (self.car.prev_x - target_x) ** 2 + (self.car.prev_y - target_y) ** 2
         )
@@ -217,20 +220,20 @@ class Environment:
             (self.car.x - target_x) ** 2 + (self.car.y - target_y) ** 2
         )
         bezier_distance = self.distance_to_bezier(self.car.x, self.car.y)
-
         car_rect = pygame.Rect(
             self.car.x - self.car.width / 2,
             self.car.y - self.car.height / 2,
             self.car.width,
             self.car.height,
         )
-
         car_collision = False
         for i in range(1, 8):
             parked_car = getattr(self, "parked_car" + str(i))
             if car_rect.colliderect(parked_car.rect):
                 car_collision = True
-            break
+                break  # Moved break outside the loop
+        # rest of the code remains unchanged
+
 
         in_lane = 215 <= self.car.x
         in_right_parking_space = (
@@ -302,6 +305,10 @@ class Environment:
         fps = 30
         running = True
         episode = 0
+
+        # Initialize agent
+        agent = Agent()
+
         while running:
             # Handle events
             for event in pygame.event.get():
@@ -309,23 +316,36 @@ class Environment:
                     running = False
                     # save the model here
 
-            state = np.array([self.car.x, self.car.y, self.car.angle])
-            action = np.random.choice(4)  # need to be changed here
-            next_state, reward, dones = self.step(action)
+            state = self.reset()  # Reset the environment to get initial state
+            total_reward = 0
+            done = False
 
-            self.draw(self.car)
-            state = next_state
+            while not done:
+                self.render()  # Render the environment
 
-            if dones:
-                episode += 1
-                self.reset()
+                # Select action using the agent's policy
+                action = agent.get_action(state)
 
-            clock.tick(fps)
+                # Execute action and get next state and reward
+                next_state, reward, done = self.step(action)
+                total_reward += reward
+                
+                # Train the agent with short memory
+                print(state)
+                #agent.train_short_memory(state, action, reward, next_state, done)
+
+                # Remember the experience for long-term memory
+                #agent.remember(state, action, reward, next_state, done)
+
+                state = next_state  # Update current state
+
+                clock.tick(fps)
+
+            print(f"Episode: {episode + 1}, Total Reward: {total_reward}")
+
+            episode += 1
+
         pygame.quit()
-
-    # def quit(self):
-    #     pygame.quit()
-    #     env.run()
 
 
 if __name__ == "__main__":
