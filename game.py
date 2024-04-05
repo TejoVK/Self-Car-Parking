@@ -1,10 +1,10 @@
 import pygame
-import numpy as np
+import numpy as np 
+from agent import Agent
 import math
 import torch
-from car import Car
 from parked_car import ParkedCar
-from agent import Agent  # Import the Agent class
+from car import Car
 
 class Environment:
     def __init__(self):
@@ -18,7 +18,6 @@ class Environment:
             self.screen, self.screen_width / 2 + 40, self.screen_height - 250
         )
 
-        # Draw parked cars
         self.parked_car1 = ParkedCar(self.screen, 315, 120, 0)
         self.parked_car2 = ParkedCar(self.screen, 315, 360, 0)
         self.parked_car3 = ParkedCar(self.screen, 315, 480, 0)
@@ -38,6 +37,7 @@ class Environment:
     def draw(self, car):
         self.screen.fill(self.bg_color)
 
+        # Drawing lanes and parking spaces
         lane_width = 80
         lane_height = self.screen_height
         space_width = 70
@@ -174,7 +174,9 @@ class Environment:
         self.car.y = self.screen_height - 250
         self.car.angle = 0
 
-        state = np.array([self.car.x, self.car.y, self.car.acceleration, self.car.angle])
+        state = np.array(
+            [self.car.x, self.car.y, self.car.acceleration, self.car.angle]
+        )
         return state
 
     def distance_to_bezier(self, x, y):
@@ -193,25 +195,26 @@ class Environment:
         acceleration = 0
         angle = self.car.angle
 
-        if isinstance(action, torch.Tensor):  # Check if action is a tensor
-            action = int(action.item())  # Convert tensor to integer
+        if isinstance(action, torch.Tensor):  
+            action = int(action.item())  
 
         if action == 0:
-            acceleration += 2  # Accelerate forward
+            acceleration += 2  
         elif action == 1:
-            acceleration -= 1  # Decelerate or brake
+            acceleration -= 1  
         elif action == 2:
-            angle += 5  # Turn right
+            angle += 5  
         elif action == 3:
-            angle -= 5  # Turn left
-        elif action == 4:
-            acceleration -= 2  # Acce
-            
+            angle -= 5  
+        
+
         self.car.acceleration = acceleration
         self.car.angle = angle
         self.car.update()
         boundary_hit = self.car.handle_boundary()
-        state = np.array([self.car.x, self.car.y, self.car.acceleration, self.car.angle]) #car.x, car.y, car.speed, car.acceleration, car.angle
+        state = np.array(
+            [self.car.x, self.car.y, self.car.acceleration, self.car.angle]
+        )  
         target_x, target_y = 315, 240
         prev_distance = math.sqrt(
             (self.car.prev_x - target_x) ** 2 + (self.car.prev_y - target_y) ** 2
@@ -231,9 +234,7 @@ class Environment:
             parked_car = getattr(self, "parked_car" + str(i))
             if car_rect.colliderect(parked_car.rect):
                 car_collision = True
-                break  # Moved break outside the loop
-        # rest of the code remains unchanged
-
+                break  
 
         in_lane = 215 <= self.car.x
         in_right_parking_space = (
@@ -259,7 +260,7 @@ class Environment:
         p = 5000
         crash_penalty = -300
         time_penalty = -10
-        movement_penalty = -10
+        movement_penalty = -20
         distance_reward_scale = 50
         orientation_reward_scale = 20
         efficiency_penalty = 50
@@ -267,14 +268,11 @@ class Environment:
         reward = 0
         done = False
 
-        # Distance to target
         distance_reward = max(0, prev_distance - distance) * distance_reward_scale
         reward += distance_reward
 
-        # Orientation towards target
         reward += orientation_reward_scale * (1 - abs(direction_diff / math.pi))
 
-        # Efficiency in movement
         if distance < prev_distance:
             reward += movement_penalty
         else:
@@ -284,10 +282,12 @@ class Environment:
             reward = p
             print("parked")
             done = True
+            
         elif boundary_hit or car_collision or in_wrong_parking_space_right:
             reward = crash_penalty
             print("collided")
             done = True
+            
         elif bezier_distance > 20:
             reward -= 0.5
         elif direction_diff > 0.5:
@@ -305,40 +305,24 @@ class Environment:
         fps = 30
         running = True
         episode = 0
-
-        # Initialize agent
-        agent = Agent()
-
+        agent = Agent(state_size=4, action_size=5, seed=42) # Initialize the deep Q-learning agent
         while running:
-            # Handle events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                    # save the model here
+                    # agent.save_model("agent_model.pth")
 
-            state = self.reset()  # Reset the environment to get initial state
+            state = self.reset()
             total_reward = 0
             done = False
 
             while not done:
-                self.render()  # Render the environment
-
-                # Select action using the agent's policy
-                action = agent.get_action(state)
-
-                # Execute action and get next state and reward
+                self.render()
+                action = agent.act(state)
                 next_state, reward, done = self.step(action)
                 total_reward += reward
-                
-                # Train the agent with short memory
-                print(state)
-                #agent.train_short_memory(state, action, reward, next_state, done)
-
-                # Remember the experience for long-term memory
-                #agent.remember(state, action, reward, next_state, done)
-
-                state = next_state  # Update current state
-
+                agent.step(state, action, reward, next_state, done)  # Step through the agent's learning process
+                state = next_state
                 clock.tick(fps)
 
             print(f"Episode: {episode + 1}, Total Reward: {total_reward}")
@@ -346,8 +330,7 @@ class Environment:
             episode += 1
 
         pygame.quit()
-
-
+        
 if __name__ == "__main__":
     env = Environment()
     env.run()

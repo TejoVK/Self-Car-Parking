@@ -1,10 +1,9 @@
 import pygame
+import numpy as np
 import math
 
 WIDTH_BIAS = 25
 HEIGHT_BIAS = 45
-
-
 class Car:
     def __init__(self, screen, x, y):
         self.screen = screen
@@ -56,7 +55,7 @@ class Car:
 
         collided = False
 
-        if new_y < 60 or new_y > 540:  # (y-45) Since y is y-height/2
+        if new_y < 60 or new_y > 540:  
             if new_x < 120 + WIDTH_BIAS:
                 new_x = 120 + WIDTH_BIAS
                 collided = True
@@ -90,45 +89,6 @@ class Car:
         self.x = new_x
         self.y = new_y
 
-        return collided
-
-    def handle_boundary_perpendicular(self):
-        new_x = self.x
-        new_y = self.y
-
-        collided = False
-
-        if new_y < 180 or new_y > 420:  # (y-45) Since y is y-height/2
-            if new_x < 120 + WIDTH_BIAS:
-                new_x = 120 + WIDTH_BIAS
-                collided = True
-            if new_x > 280 - WIDTH_BIAS:
-                new_x = 280 - WIDTH_BIAS
-                collided = True
-        else:
-            if (0 <= new_x <= 140 or 290 <= new_x <= 400) and new_y < 170 + HEIGHT_BIAS:
-                new_y = 170 + HEIGHT_BIAS
-                collided = True
-            if (0 <= new_x <= 140 or 290 <= new_x <= 400) and new_y > 420 - HEIGHT_BIAS:
-                new_y = 420 - HEIGHT_BIAS
-                collided = True
-
-            if new_x < 45:
-                new_x = 45
-                collided = True
-            if new_x > 380 - WIDTH_BIAS:
-                new_x = 380 - WIDTH_BIAS
-                collided = True
-
-        if new_y - HEIGHT_BIAS < 0:
-            new_y = HEIGHT_BIAS
-            collided = True
-        if new_y + HEIGHT_BIAS > self.screen.get_height():
-            new_y = self.screen.get_height() - HEIGHT_BIAS
-            collided = True
-
-        self.x = new_x
-        self.y = new_y
         return collided
 
     def draw(self):
