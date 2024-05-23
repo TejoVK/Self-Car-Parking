@@ -1,18 +1,16 @@
 import pygame
-import numpy as np
 import math
 
 WIDTH_BIAS = 25
 HEIGHT_BIAS = 45
+
 class Car:
     def __init__(self, screen, x, y):
         self.screen = screen
         self.width = 50
         self.height = 90
         self.car_image = pygame.image.load("assets/car.png")
-        self.car_image = pygame.transform.scale(
-            self.car_image, (self.width, self.height)
-        )
+        self.car_image = pygame.transform.scale(self.car_image, (self.width, self.height))
         self.x = x + self.width / 2
         self.y = y + self.height / 2
         self.speed = 1
@@ -66,9 +64,7 @@ class Car:
             if (60 <= new_x <= 125 or 280 <= new_x <= 315) and new_y < 60 + HEIGHT_BIAS:
                 new_y = 60 + HEIGHT_BIAS
                 collided = True
-            if (
-                60 <= new_x <= 125 or 280 <= new_x <= 315
-            ) and new_y > 540 - HEIGHT_BIAS:
+            if (60 <= new_x <= 125 or 280 <= new_x <= 315) and new_y > 540 - HEIGHT_BIAS:
                 new_y = 540 - HEIGHT_BIAS
                 collided = True
 
