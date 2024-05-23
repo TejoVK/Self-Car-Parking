@@ -1,7 +1,6 @@
 import numpy as np
 import random
 from collections import namedtuple, deque
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -23,7 +22,7 @@ class QNetwork(nn.Module):
 
 
 class Agent():
-    def __init__(self, state_size, action_size, seed, buffer_size=int(1e5), batch_size=64, gamma=0.99, tau=1e-3, lr=5e-4, update_every=4):
+    def __init__(self, state_size, action_size, seed, buffer_size=int(1e5), batch_size=64, gamma=0.99, tau=1e-3, lr=5e-4, update_every=4, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(seed)
@@ -33,6 +32,9 @@ class Agent():
         self.tau = tau
         self.lr = lr
         self.update_every = update_every
+        self.eps = eps_start
+        self.eps_end = eps_end
+        self.eps_decay = eps_decay
 
         # Q-Networks
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
@@ -54,7 +56,9 @@ class Agent():
                 experiences = self.memory.sample()
                 self.learn(experiences, self.gamma)
 
-    def act(self, state, eps=0.):
+    def act(self, state, eps=None):
+        if eps is None:
+            eps = self.eps
         state = torch.from_numpy(state).float().unsqueeze(0).to(device)
         self.qnetwork_local.eval()
         with torch.no_grad():
@@ -80,6 +84,9 @@ class Agent():
         self.optimizer.step()
 
         self.soft_update(self.qnetwork_local, self.qnetwork_target, self.tau)
+
+        # Update epsilon
+        self.eps = max(self.eps_end, self.eps_decay * self.eps)
 
     def soft_update(self, local_model, target_model, tau):
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
