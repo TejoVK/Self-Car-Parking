@@ -51,12 +51,12 @@ class Car:
         rotated_image = pygame.transform.rotate(self.car_image, self.angle)
         rect = rotated_image.get_rect(center=(self.x, self.y))
         self.screen.blit(rotated_image, rect)
-        self.get_bounding_box()
+        # self.get_bounding_box()
 
-    def get_bounding_box(self):
-        corners = self.get_rotated_corners()
-        for i in range(len(corners)):
-            pygame.draw.line(self.screen, (0, 0, 0),  corners[(i+1) % len(corners)], corners[i], 1)
+    # def get_bounding_box(self):
+        # corners = self.get_rotated_corners()
+        # for i in range(len(corners)):
+            # pygame.draw.line(self.screen, (0, 0, 0),  corners[(i+1) % len(corners)], corners[i], 1)
 
     def get_rotated_corners(self):
         angle_radians = math.radians(self.angle)

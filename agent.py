@@ -44,7 +44,14 @@ class Agent():
         # Replay memory
         self.memory = ReplayBuffer(action_size, buffer_size, batch_size, seed)
         self.t_step = 0
-
+        
+    def save_model(self, file_path):
+        torch.save(self.qnetwork_local.state_dict(), file_path)
+    
+    def load_model(self, file_path):
+        self.qnetwork_local.load_state_dict(torch.load(file_path))
+        self.qnetwork_local.eval()  # Set the model to evaluation mode
+        
     def step(self, state, action, reward, next_state, done):
         # Save experience in replay memory
         self.memory.add(state, action, reward, next_state, done)

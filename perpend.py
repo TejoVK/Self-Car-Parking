@@ -13,7 +13,7 @@ class Environment:
         self.screen_height = 600
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.bg_color = (230, 230, 230)
-        self.car = Car(self.screen, self.screen_width / 2 + 40, self.screen_height - 250)
+        self.car = Car(self.screen, self.screen_width / 2 + 40 , self.screen_height - 250)
 
         self.parked_car1 = ParkedCar(self.screen, 340, 195, -90)
         self.parked_car2 = ParkedCar(self.screen, 340, 335, -90)
@@ -108,32 +108,26 @@ class Environment:
         for i in range(1, 8):
             parked_car = getattr(self, "parked_car" + str(i))
             parked_car.draw()
-            pygame.draw.rect(self.screen, (255, 0, 0), parked_car.rect, 2)  # Draw red line around each parked car
+            # pygame.draw.rect(self.screen, (255, 0, 0), parked_car.rect, 2)  # Draw red line around each parked car
 
         self.car.draw()
 
-        self.draw_line_to_target()
+        # self.draw_line_to_target()
         self.draw_parking_box()
-        # Calculate and draw car_rect
-        # car_rect = self.car.get_bounding_box()
-        # pygame.draw.rect(self.screen, (255, 0, 0), car_rect, 2)
         '''adding some code'''
-        # collision_color = (255, 0, 0)
-        # top_lane_rect1 = pygame.Rect(335, 260, 40, 20)
-        # pygame.draw.rect(self.screen, collision_color, top_lane_rect1)
-        in_right_parking_space_rect = pygame.Rect(320, 255, 50, 20)
-        pygame.draw.rect(self.screen, (255, 0, 0), in_right_parking_space_rect, 2)
+        # in_right_parking_space_rect = pygame.Rect(340, 255, 30, 20)
+        # pygame.draw.rect(self.screen, (255, 0, 0), in_right_parking_space_rect, 2)
         
         
         pygame.display.flip()
 
 
 
-    def draw_line_to_target(self):
-        car_midpoint_x, car_midpoint_y = self.car.x, self.car.y
-        pygame.draw.line(
-            self.screen, (0, 0, 255), (car_midpoint_x, car_midpoint_y), (340, 265), 5
-        )
+    # def draw_line_to_target(self):
+    #     car_midpoint_x, car_midpoint_y = self.car.x, self.car.y
+    #     pygame.draw.line(
+    #         self.screen, (0, 0, 255), (car_midpoint_x, car_midpoint_y), (340, 265), 5
+    #     )
 
     def bezier_point(self, t, P0, P1, P2, P3, P4):
         if t < 0.5:
@@ -172,12 +166,12 @@ class Environment:
         parking_box_surface = pygame.Surface((width, height), pygame.SRCALPHA)
         parking_box_color = (255, 255, 255, 128)  # RGBA color with alpha for transparency
         border_thickness = 2
-        pygame.draw.rect(
-            parking_box_surface,
-            parking_box_color,
-            (0, 0, width, height),
-            border_thickness,
-        )
+        # pygame.draw.rect(
+        #     parking_box_surface,
+        #     parking_box_color,
+        #     (0, 0, width, height),
+        #     border_thickness,
+        # )
 
 
         self.screen.blit(parking_box_surface, (x, y))
@@ -253,11 +247,11 @@ class Environment:
         in_lane = 215 <= self.car.x
         
         in_right_parking_space = (
-            (self.car.x >= 320)
+            (self.car.x >= 340)
             and (self.car.x <= 350)
             and (self.car.y >= 255)
             and (self.car.y <= 275)
-            # and (80 <= abs(self.car.angle % 360) <= 110)
+            # and (85 <= abs(self.car.angle % 360) <= 105)
         )
         
         target_dir = math.atan2(target_y - self.car.y, target_x - self.car.x)
@@ -266,7 +260,7 @@ class Environment:
 
         p = 20000
         crash_penalty = -300
-        time_penalty = -20
+        time_penalty = -30
         movement_penalty = -20
         distance_reward_scale = 50
         orientation_reward_scale = 20
@@ -320,10 +314,12 @@ class Environment:
         fps = 30
         running = True
         episode = 0
-        agent = Agent(state_size=4, action_size=5, seed=42)  # Initialize the deep Q-learning agent
+        agent = Agent(state_size=4, action_size=5, seed=42)  # Initialize the deep Q-learning agent\
+        agent.load_model("agent.pth")
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    agent.save_model("agent.pth")
                     running = False
 
             state = self.reset()
