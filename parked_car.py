@@ -1,5 +1,11 @@
 import pygame
 
+'''
+function to initialize the cars in the environment.
+
+takes in 4 params: screen of the pygame, the x and y coordinates of the point where the image of the car is to be added
+and the angle at which the car is to be placed.
+'''
 class ParkedCar:
     def __init__(self, screen, x, y, angle=0):
         self.screen = screen
