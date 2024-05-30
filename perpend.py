@@ -336,7 +336,7 @@ class Environment:
                 action = agent.act(state)
                 next_state, reward, done = self.step(action)
                 total_reward += reward
-                agent.step(state, action, reward, next_state, done)  # Step through the agent's learning process
+                #agent.step(state, action, reward, next_state, done)  # Step through the agent's learning process
                 state = next_state
                 clock.tick(fps)
 
