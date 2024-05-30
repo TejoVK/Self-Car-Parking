@@ -117,6 +117,42 @@ class Car:
             if not overlap(car_proj[0], car_proj[1], rect_proj[0], rect_proj[1]):
                 return False
         return True
+    
+    def handle_boundary(self):
+        new_x = self.x
+        new_y = self.y
+        collided = False
+        if new_y < 60 or new_y > 540:  # (y-45) Since y is y-height/2
+            if new_x < 120 + WIDTH_BIAS:
+                new_x = 120 + WIDTH_BIAS
+                collided = True
+            if new_x > 280 - WIDTH_BIAS:
+                new_x = 280 - WIDTH_BIAS
+                collided = True
+        else:
+            if (60 <= new_x <= 125 or 280 <= new_x <= 315) and new_y < 60 + HEIGHT_BIAS:
+                new_y = 60 + HEIGHT_BIAS
+                collided = True
+            if (
+                60 <= new_x <= 125 or 280 <= new_x <= 315
+            ) and new_y > 540 - HEIGHT_BIAS:
+                new_y = 540 - HEIGHT_BIAS
+                collided = True
+            if new_x < 85:
+                new_x = 85
+                collided = True
+            if new_x > 340 - WIDTH_BIAS:
+                new_x = 340 - WIDTH_BIAS
+                collided = True
+        if new_y - HEIGHT_BIAS < 0:
+            new_y = HEIGHT_BIAS
+            collided = True
+        if new_y + HEIGHT_BIAS > self.screen.get_height():
+            new_y = self.screen.get_height() - HEIGHT_BIAS
+            collided = True
+        self.x = new_x
+        self.y = new_y
+        return collided
 
     def handle_boundary_perpendicular(self):
         new_x = self.x

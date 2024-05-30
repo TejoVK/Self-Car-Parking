@@ -318,13 +318,13 @@ class Environment:
         agent = Agent(state_size=4, action_size=5, seed=42)  # Initialize the deep Q-learning agent\
             
             
-        if os.path.exists('agent.pth'):
-            agent.load_model("agent.pth")
+        if os.path.exists('agent_perpend.pth'):
+            agent.load_model("agent_perpend.pth")
             
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    agent.save_model("agent.pth")
+                    # agent.save_model("agent_perpend.pth")
                     running = False
 
             state = self.reset()

@@ -5,6 +5,7 @@ import math
 import torch
 from parked_car import ParkedCar
 from car import Car
+import os 
 
 class Environment:
     def __init__(self):
@@ -37,7 +38,7 @@ class Environment:
     def draw(self, car):
         self.screen.fill(self.bg_color)
 
-        # Drawing lanes and parking spaces
+      
         lane_width = 80 # width of the road
         lane_height = self.screen_height #length of the road
         space_width = 70 #represents the width of each parking space.
@@ -116,10 +117,15 @@ class Environment:
 
         self.draw_line_to_target()
         self.draw_parking_box()
+        
+        in_right_parking_space_rect = pygame.Rect(300, 200, 35, 30)
+        pygame.draw.rect(self.screen, (255, 0, 0),in_right_parking_space_rect, 2)
+        
         pygame.display.flip()
 
     def draw_line_to_target(self):
         car_midpoint_x, car_midpoint_y = self.car.x, self.car.y
+        
         pygame.draw.line(
             self.screen, (0, 0, 255), (car_midpoint_x, car_midpoint_y), (315, 240), 5
         )
@@ -157,12 +163,12 @@ class Environment:
         parking_box_surface = pygame.Surface((width, height), pygame.SRCALPHA)
         parking_box_color = (255, 255, 255, 128)
         border_thickness = 2
-        pygame.draw.rect(
-            parking_box_surface,
-            parking_box_color,
-            (0, 0, width, height),
-            border_thickness,
-        )
+        # pygame.draw.rect(
+        #     parking_box_surface,
+        #     parking_box_color,
+        #     (0, 0, width, height),
+        #     border_thickness,
+        # )
 
         self.screen.blit(parking_box_surface, (x, y))
 
@@ -223,19 +229,16 @@ class Environment:
             (self.car.x - target_x) ** 2 + (self.car.y - target_y) ** 2
         )
         bezier_distance = self.distance_to_bezier(self.car.x, self.car.y)
-        car_rect = pygame.Rect(
-            self.car.x - self.car.width / 2,
-            self.car.y - self.car.height / 2,
-            self.car.width,
-            self.car.height,
-        )
+        
         car_collision = False
         for i in range(1, 8):
             parked_car = getattr(self, "parked_car" + str(i))
-            if car_rect.colliderect(parked_car.rect):
+            if self.car.check_collision(parked_car.rect):
                 car_collision = True
                 break  
-
+        
+        
+        
         in_lane = 215 <= self.car.x
         in_right_parking_space = (
             (self.car.x >= 300)
@@ -244,20 +247,13 @@ class Environment:
             and (self.car.y <= 255)
             and (-10 <= abs(self.car.angle % 360) <= 10)
         )
-        in_wrong_parking_space_right = (
-            (self.car.x >= 265)
-            and (self.car.x <= 340)
-            and (
-                ((self.car.y >= 40) and (self.car.y <= 200))
-                or ((self.car.y >= 285) and (self.car.y <= 560))
-            )
-        )
+        
 
         target_dir = math.atan2(target_y - self.car.y, target_x - self.car.x)
         direction_diff = abs(target_dir - self.car.angle)
         direction_diff = ((direction_diff + math.pi) % (2 * math.pi)) - math.pi
 
-        p = 5000
+        p = 50000
         crash_penalty = -300
         time_penalty = -10
         movement_penalty = -20
@@ -283,7 +279,7 @@ class Environment:
             print("parked")
             done = True
             
-        elif boundary_hit or car_collision or in_wrong_parking_space_right:
+        elif boundary_hit or car_collision:
             reward = crash_penalty
             print("collided")
             done = True
@@ -305,12 +301,18 @@ class Environment:
         fps = 30
         running = True
         episode = 0
-        agent = Agent(state_size=4, action_size=5, seed=42) # Initialize the deep Q-learning agent
+        
+        agent = Agent(state_size=4, action_size=5, seed=42)  # Initialize the deep Q-learning agent\
+            
+            
+        if os.path.exists('agent_parallel.pth'):
+            agent.load_model("agent_parallel.pth")
+        
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                    # agent.save_model("agent_model.pth")
+                    agent.save_model("agent_parallel.pth")
 
             state = self.reset()
             total_reward = 0
@@ -326,6 +328,7 @@ class Environment:
                 clock.tick(fps)
 
             print(f"Episode: {episode + 1}, Total Reward: {total_reward}")
+            print(self.car.angle)
 
             episode += 1
 
