@@ -8,21 +8,23 @@ import torch.nn.functional as F
 
 # Define the QNetwork architecture
 class QNetwork(nn.Module):
-    def __init__(self, state_size, action_size, seed, fc1_units=512, fc2_units=256):
+    def __init__(self, state_size, action_size, seed, fc1_units=1024, fc2_units=512, fc3_units=256):
         super(QNetwork, self).__init__()
         self.seed = torch.manual_seed(seed)
         self.fc1 = nn.Linear(state_size, fc1_units)
         self.fc2 = nn.Linear(fc1_units, fc2_units)
-        self.fc3 = nn.Linear(fc2_units, action_size)
+        self.fc3 = nn.Linear(fc2_units, fc3_units)
+        self.fc4 = nn.Linear(fc3_units, action_size)
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
         x = F.relu(self.fc2(x))
-        return self.fc3(x)
+        x = F.relu(self.fc3(x))
+        return self.fc4(x)
 
 
 class Agent():
-    def __init__(self, state_size, action_size, seed, buffer_size=int(1e5), batch_size=64, gamma=0.99, tau=1e-3, lr=5e-4, update_every=4, eps_start=1.0, eps_end=0.01, eps_decay=0.995):
+    def __init__(self, state_size, action_size, seed, buffer_size=int(1e5), batch_size=64, gamma=0.99, tau=1e-3, lr=5e-4, update_every=4, eps_start=1.0, eps_end=0.01, eps_decay=0.995, gradient_clip=1.0):
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(seed)
@@ -35,6 +37,7 @@ class Agent():
         self.eps = eps_start
         self.eps_end = eps_end
         self.eps_decay = eps_decay
+        self.gradient_clip = gradient_clip
 
         # Q-Networks
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
@@ -44,14 +47,24 @@ class Agent():
         # Replay memory
         self.memory = ReplayBuffer(action_size, buffer_size, batch_size, seed)
         self.t_step = 0
-        
+
     def save_model(self, file_path):
-        torch.save(self.qnetwork_local.state_dict(), file_path)
+        torch.save({
+            'qnetwork_local_state_dict': self.qnetwork_local.state_dict(),
+            'qnetwork_target_state_dict': self.qnetwork_target.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'eps': self.eps
+        }, file_path)
     
     def load_model(self, file_path):
-        self.qnetwork_local.load_state_dict(torch.load(file_path))
-        self.qnetwork_local.eval()  # Set the model to evaluation mode
-        
+        checkpoint = torch.load(file_path)
+        self.qnetwork_local.load_state_dict(checkpoint['qnetwork_local_state_dict'])
+        self.qnetwork_target.load_state_dict(checkpoint['qnetwork_target_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.eps = checkpoint['eps']
+        self.qnetwork_local.eval()
+        self.qnetwork_target.eval()
+
     def step(self, state, action, reward, next_state, done):
         # Save experience in replay memory
         self.memory.add(state, action, reward, next_state, done)
@@ -80,7 +93,9 @@ class Agent():
     def learn(self, experiences, gamma):
         states, actions, rewards, next_states, dones = experiences
 
-        Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
+        # Double DQN
+        Q_targets_next_local = self.qnetwork_local(next_states).detach().max(1)[1].unsqueeze(1)
+        Q_targets_next = self.qnetwork_target(next_states).detach().gather(1, Q_targets_next_local)
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
 
         Q_expected = self.qnetwork_local(states).gather(1, actions)
@@ -88,6 +103,8 @@ class Agent():
         loss = F.mse_loss(Q_expected, Q_targets)
         self.optimizer.zero_grad()
         loss.backward()
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(self.qnetwork_local.parameters(), self.gradient_clip)
         self.optimizer.step()
 
         self.soft_update(self.qnetwork_local, self.qnetwork_target, self.tau)

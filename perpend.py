@@ -5,6 +5,7 @@ from agent import Agent
 from parked_car import ParkedCar
 from car import Car
 import time
+import os
 class Environment:
     def __init__(self):
         pygame.init()
@@ -258,7 +259,7 @@ class Environment:
         direction_diff = abs(target_dir - math.radians(self.car.angle))
         direction_diff = ((direction_diff + math.pi) % (2 * math.pi)) - math.pi
 
-        p = 20000
+        p = 40000
         crash_penalty = -300
         time_penalty = -30
         movement_penalty = -20
@@ -315,7 +316,11 @@ class Environment:
         running = True
         episode = 0
         agent = Agent(state_size=4, action_size=5, seed=42)  # Initialize the deep Q-learning agent\
-        agent.load_model("agent.pth")
+            
+            
+        if os.path.exists('agent.pth'):
+            agent.load_model("agent.pth")
+            
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
